@@ -77,8 +77,12 @@ export async function handleRecommendation(
   const topResults = rankedAll.slice(0, 3);
   const mappedResults = topResults.map((r: any) => ({
     sku: r.product.sku,
+    name: r.product.name,
+    brand: r.product.brand,
+    description: r.product.description,
     score: r.score,
-    pricePaise: r.product.pricePaise
+    pricePaise: r.product.pricePaise,
+    attributes: r.product.attributes
   }));
 
   // 5. Persist Recommendation snapshot

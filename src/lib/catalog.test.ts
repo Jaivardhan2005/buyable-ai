@@ -19,7 +19,7 @@ function productRecord(overrides: Partial<Prisma.ProductGetPayload<typeof publis
     updatedAt: new Date(),
     inventory: { productId: "product-id", availableQty: 7, reservedQty: 0, reservationExpiresAt: null, updatedAt: new Date(), version: 1 },
     attributes: Object.values(AttributeKey).map((key, index) => ({ id: `${key}-id`, productId: "product-id", key, valueJson: { normalizedScore: 50 + index }, normalizedScore: 50 + index, source: AttributeSource.MERCHANT, confidence: null })),
-    merchant: { name: "SoundNest Electronics", slug: "soundnest-electronics" },
+    merchant: { id: "merchant-id", name: "SoundNest Electronics", slug: "soundnest-electronics" },
     ...overrides,
   };
 }

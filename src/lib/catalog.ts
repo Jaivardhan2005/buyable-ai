@@ -9,7 +9,7 @@ const publishedProductQuery = {
   include: {
     inventory: true,
     attributes: true,
-    merchant: { select: { name: true, slug: true } },
+    merchant: { select: { id: true, name: true, slug: true } },
   },
   orderBy: { sku: "asc" },
 } satisfies Prisma.ProductFindManyArgs;
@@ -17,7 +17,7 @@ const publishedProductQuery = {
 export type PublishedProductRecord = Prisma.ProductGetPayload<typeof publishedProductQuery>;
 
 export type Catalog = {
-  merchant: { name: string; slug: string } | null;
+  merchant: { id: string; name: string; slug: string } | null;
   products: DemoProduct[];
 };
 

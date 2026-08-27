@@ -9,7 +9,7 @@ export async function getPublishedCatalog(): Promise<Catalog> {
   const firstMerchant = products[0]?.merchant;
 
   return {
-    merchant: firstMerchant ? { name: firstMerchant.name, slug: firstMerchant.slug } : null,
+    merchant: firstMerchant ? { id: firstMerchant.id, name: firstMerchant.name, slug: firstMerchant.slug } : null,
     products: toRankingProducts(products),
   };
 }

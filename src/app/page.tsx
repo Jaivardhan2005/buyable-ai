@@ -19,8 +19,8 @@ export default async function Home() {
         </div>
       </section>
       <div className="mt-8 flex flex-wrap items-center gap-6">
+        <a href="/shop" className="rounded-xl bg-purple-500/10 border border-purple-500/20 px-5 py-3 text-sm font-semibold text-purple-300 transition-all hover:bg-purple-500/20 hover:border-purple-400/30">Enter Buyer Shop →</a>
         <a href="/merchant/readiness" className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 px-5 py-3 text-sm font-semibold text-cyan-300 transition-all hover:bg-cyan-500/20 hover:border-cyan-400/30">View Readiness Report →</a>
-        <p className="text-sm text-slate-500">Assess whether this merchant is AI-buyer ready.</p>
       </div>
     </main>
   );
