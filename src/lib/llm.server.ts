@@ -94,7 +94,7 @@ export async function extractPreferences(requestText: string): Promise<Extracted
   let response;
   try {
     response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.6-flash",
       contents: `Extract the shopping preferences for earbuds from the following request:\n"${requestText}"`,
       config: {
         responseMimeType: "application/json",

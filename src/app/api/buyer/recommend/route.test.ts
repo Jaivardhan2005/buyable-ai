@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { handleRecommendation } from "./route";
+import { handleRecommendation } from "./handler";
 
 const fakeCatalog = {
   merchant: { name: "Fake", slug: "fake" },
