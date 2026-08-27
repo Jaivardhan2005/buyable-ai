@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getBuyerSessionFromCookie } from "@/lib/session.server";
 import { extractPreferences, ExtractionError } from "@/lib/llm.server";
+import { generateExplanation } from "@/lib/explanation";
 import { getPublishedCatalog } from "@/lib/catalog.server";
 import { rankProducts } from "@/lib/ranking";
 import { prisma } from "@/lib/prisma";
@@ -75,14 +76,15 @@ export async function handleRecommendation(
 
   const rankedAll = rankProducts(catalog.products, extracted.weights, extracted.budgetPaise, extracted.category);
   const topResults = rankedAll.slice(0, 3);
-  const mappedResults = topResults.map((r: any) => ({
+  const mappedResults = topResults.map((r: any, index: number) => ({
     sku: r.product.sku,
     name: r.product.name,
     brand: r.product.brand,
     description: r.product.description,
     score: r.score,
     pricePaise: r.product.pricePaise,
-    attributes: r.product.attributes
+    attributes: r.product.attributes,
+    explanation: generateExplanation(r, index, topResults, extracted.weights, extracted.budgetPaise)
   }));
 
   // 5. Persist Recommendation snapshot
