@@ -15,7 +15,7 @@ function serializeBigInt(obj: any): any {
 export async function handleRecommendation(
   request: Request,
   getSession: () => Promise<{ id: string } | null>,
-  extractPrefs: (text: string) => Promise<{ budgetPaise: bigint | null, weights: Record<string, number> }>,
+  extractPrefs: (text: string) => Promise<{ budgetPaise: bigint | null, category: string | null, weights: Record<string, number> }>,
   getCatalog: () => Promise<any>,
   saveRecommendation: (data: any) => Promise<{ id: string }>
 ) {
@@ -73,7 +73,7 @@ export async function handleRecommendation(
     );
   }
 
-  const rankedAll = rankProducts(catalog.products, extracted.weights, extracted.budgetPaise);
+  const rankedAll = rankProducts(catalog.products, extracted.weights, extracted.budgetPaise, extracted.category);
   const topResults = rankedAll.slice(0, 3);
   const mappedResults = topResults.map((r: any) => ({
     sku: r.product.sku,

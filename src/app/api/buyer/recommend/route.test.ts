@@ -5,15 +5,16 @@ import { handleRecommendation } from "./handler";
 const fakeCatalog = {
   merchant: { name: "Fake", slug: "fake" },
   products: [
-    { sku: "ITEM-1", pricePaise: 1000n, availableQty: 10, attributes: { BASS: 100, ANC_LEVEL: 10 } },
-    { sku: "ITEM-2", pricePaise: 5000n, availableQty: 5, attributes: { BASS: 50, ANC_LEVEL: 90 } },
-    { sku: "ITEM-3", pricePaise: 10000n, availableQty: 2, attributes: { BASS: 10, ANC_LEVEL: 100 } },
+    { sku: "ITEM-1", pricePaise: 1000n, availableQty: 10, category: "earbuds", attributes: { BASS: 100, ANC_LEVEL: 10 } },
+    { sku: "ITEM-2", pricePaise: 5000n, availableQty: 5, category: "earbuds", attributes: { BASS: 50, ANC_LEVEL: 90 } },
+    { sku: "ITEM-3", pricePaise: 10000n, availableQty: 2, category: "earbuds", attributes: { BASS: 10, ANC_LEVEL: 100 } },
+    { sku: "SPKR-1", pricePaise: 4000n, availableQty: 8, category: "speakers", attributes: { BASS: 95, ANC_LEVEL: 0 } },
   ],
 };
 
 function buildFakeDeps({
   session = { id: "test-session-123" } as any,
-  prefs = { budgetPaise: null, weights: { BASS: 100 } } as any,
+  prefs = { budgetPaise: null, category: null, weights: { BASS: 100 } } as any,
   catalog = fakeCatalog as any,
   failsExtraction = false,
   extractionError = new Error("Failed to communicate")
@@ -82,7 +83,7 @@ test("handles empty catalog", async () => {
 
 test("valid recommendation pipeline, deterministic ranking, payload validation", async () => {
   const req = new Request("http://localhost/api/buyer/recommend", { method: "POST", body: JSON.stringify({ requestText: "I want strong bass" }) });
-  const deps = buildFakeDeps({ prefs: { budgetPaise: 4000n, weights: { BASS: 100 } } });
+  const deps = buildFakeDeps({ prefs: { budgetPaise: 3000n, category: null, weights: { BASS: 100 } } });
   
   const res = await handleRecommendation(req, deps.getSession, deps.extractPrefs, deps.getCatalog, deps.saveRecommendation);
   assert.equal(res.status, 201);
@@ -95,13 +96,13 @@ test("valid recommendation pipeline, deterministic ranking, payload validation",
   const saved = deps.getSavedRecommendation();
   assert.equal(saved.data.sessionId, "test-session-123");
   assert.equal(saved.data.requestSnapshot.text, "I want strong bass");
-  assert.equal(saved.data.candidates.length, 3, "Candidates should capture the full snapshot of eligible products");
+  assert.equal(saved.data.candidates.length, 4, "Candidates should capture the full snapshot of eligible products");
   assert.equal(saved.data.rankedResults.length, 1);
 });
 
 test("no-budget requests return all matching items ordered deterministically", async () => {
   const req = new Request("http://localhost/api/buyer/recommend", { method: "POST", body: JSON.stringify({ requestText: "noise cancellation" }) });
-  const deps = buildFakeDeps({ prefs: { budgetPaise: null, weights: { ANC_LEVEL: 100 } } });
+  const deps = buildFakeDeps({ prefs: { budgetPaise: null, category: null, weights: { ANC_LEVEL: 100 } } });
   
   const res = await handleRecommendation(req, deps.getSession, deps.extractPrefs, deps.getCatalog, deps.saveRecommendation);
   assert.equal(res.status, 201);
@@ -124,4 +125,29 @@ test("zero matching products due to budget", async () => {
   assert.equal(json.results.length, 0, "No items fit the budget");
   const saved = deps.getSavedRecommendation();
   assert.equal(saved.data.rankedResults.length, 0);
+});
+
+test("category constraint filters out non-matching products", async () => {
+  const req = new Request("http://localhost/api/buyer/recommend", { method: "POST", body: JSON.stringify({ requestText: "speakers" }) });
+  const deps = buildFakeDeps({ prefs: { budgetPaise: 4000n, category: "speakers", weights: { BASS: 100 } } });
+  
+  const res = await handleRecommendation(req, deps.getSession, deps.extractPrefs, deps.getCatalog, deps.saveRecommendation);
+  assert.equal(res.status, 201);
+  const json = await res.json();
+
+  assert.equal(json.results.length, 1, "Only SPKR-1 matches the speakers category and budget");
+  assert.equal(json.results[0].sku, "SPKR-1");
+});
+
+test("unspecified category returns all matching products", async () => {
+  const req = new Request("http://localhost/api/buyer/recommend", { method: "POST", body: JSON.stringify({ requestText: "bass" }) });
+  const deps = buildFakeDeps({ prefs: { budgetPaise: 4000n, category: null, weights: { BASS: 100 } } });
+  
+  const res = await handleRecommendation(req, deps.getSession, deps.extractPrefs, deps.getCatalog, deps.saveRecommendation);
+  assert.equal(res.status, 201);
+  const json = await res.json();
+
+  assert.equal(json.results.length, 2, "ITEM-1 and SPKR-1 should both match the 4000n budget when category is not specified");
+  assert.equal(json.results[0].sku, "ITEM-1", "ITEM-1 has higher bass (100 vs 95)");
+  assert.equal(json.results[1].sku, "SPKR-1");
 });
