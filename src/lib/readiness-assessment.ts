@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import type { Prisma } from "../../generated/prisma";
 import type { MerchantReadiness, ReadinessMerchantSnapshot } from "@/lib/readiness";
+import type { ReadinessInput } from "@/lib/readiness-rubric";
 
 export const READINESS_RUBRIC_VERSION = "day-2-v1";
 
@@ -17,6 +18,7 @@ export type ReadinessSnapshots = {
 export type ReadinessAssessmentWrite = {
   merchantId: string;
   score: number;
+  dimensions: ReadinessInput;
   rubricVersion: string;
   catalogSnapshotHash: string;
   policySnapshotHash: string;
@@ -78,6 +80,7 @@ export function createReadinessAssessmentWrite(readiness: MerchantReadiness, sna
   return {
     merchantId: readiness.merchantId,
     score: readiness.score,
+    dimensions: readiness.dimensions,
     rubricVersion: READINESS_RUBRIC_VERSION,
     catalogSnapshotHash: snapshots.catalogSnapshotHash,
     policySnapshotHash: snapshots.policySnapshotHash,

@@ -18,7 +18,10 @@ export default async function Home() {
           {products.map((product) => <article className="rounded-2xl border border-slate-700 bg-slate-950 p-5" key={product.sku}><p className="text-xs font-medium uppercase tracking-wider text-cyan-300">{product.brand}</p><h3 className="mt-2 text-lg font-semibold text-white">{product.name}</h3><p className="mt-2 min-h-12 text-sm text-slate-400">{product.description}</p><div className="mt-5 flex items-center justify-between"><span className="font-semibold text-white">{formatInr(product.pricePaise)}</span><span className="text-sm text-emerald-300">{product.availableQty} in stock</span></div></article>)}
         </div>
       </section>
-      <p className="mt-8 text-sm text-slate-500">Next milestones add merchant ingestion, readiness assessment, and the guided buyer journey. No purchase action is available yet.</p>
+      <div className="mt-8 flex flex-wrap items-center gap-6">
+        <a href="/merchant/readiness" className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 px-5 py-3 text-sm font-semibold text-cyan-300 transition-all hover:bg-cyan-500/20 hover:border-cyan-400/30">View Readiness Report →</a>
+        <p className="text-sm text-slate-500">Assess whether this merchant is AI-buyer ready.</p>
+      </div>
     </main>
   );
 }

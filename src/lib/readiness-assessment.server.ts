@@ -15,6 +15,7 @@ export async function createMerchantReadinessAssessment(merchantId: string) {
     data: {
       merchantId: write.merchantId,
       score: write.score,
+      dimensions: write.dimensions,
       rubricVersion: write.rubricVersion,
       catalogSnapshotHash: write.catalogSnapshotHash,
       policySnapshotHash: write.policySnapshotHash,

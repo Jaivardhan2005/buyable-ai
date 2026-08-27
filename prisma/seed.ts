@@ -1,4 +1,4 @@
-import { PrismaClient, AttributeKey, AttributeSource, ProductStatus } from "../generated/prisma";
+import { PrismaClient, AttributeKey, AttributeSource, PolicyStatus, ProductStatus } from "../generated/prisma";
 import { demoCatalog, demoMerchant } from "../src/lib/demo-catalog";
 
 const prisma = new PrismaClient();
@@ -36,6 +36,19 @@ async function main() {
       })));
     });
   }
+
+  await prisma.merchantPolicy.upsert({
+    where: { merchantId_policyType_version: { merchantId: merchant.id, policyType: "RETURNS", version: 1 } },
+    update: {},
+    create: {
+      merchantId: merchant.id,
+      policyType: "RETURNS",
+      content: "Products may be returned within 7 days of delivery if unused and in original packaging. Refunds are processed within 5 business days after inspection.",
+      structuredRules: { returnWindowDays: 7, conditionRequired: "unused", refundProcessingDays: 5 },
+      status: PolicyStatus.ACTIVE,
+      version: 1,
+    },
+  });
 }
 
 main().finally(() => prisma.$disconnect());
