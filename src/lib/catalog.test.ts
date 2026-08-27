@@ -13,6 +13,7 @@ function productRecord(overrides: Partial<Prisma.ProductGetPayload<typeof publis
     description: "Test product",
     pricePaise: 199900n,
     currency: "INR",
+    category: "earbuds",
     status: ProductStatus.PUBLISHED,
     sourceVersion: 1,
     createdAt: new Date(),
@@ -27,7 +28,7 @@ function productRecord(overrides: Partial<Prisma.ProductGetPayload<typeof publis
 test("catalog records map to the ranking model without changing persisted values", () => {
   const result = toRankingProducts([productRecord()]);
 
-  assert.deepEqual(result, [{ sku: "SN-TEST", name: "Test Buds", brand: "SoundNest", description: "Test product", pricePaise: 199900n, availableQty: 7, attributes: { BATTERY_HOURS: 50, ANC_LEVEL: 51, BASS: 52, COMFORT: 53, MICROPHONE: 54, WATER_RESISTANCE: 55 } }]);
+  assert.deepEqual(result, [{ sku: "SN-TEST", name: "Test Buds", brand: "SoundNest", description: "Test product", pricePaise: 199900n, availableQty: 7, category: "earbuds", attributes: { BATTERY_HOURS: 50, ANC_LEVEL: 51, BASS: 52, COMFORT: 53, MICROPHONE: 54, WATER_RESISTANCE: 55 } }]);
 });
 
 test("catalog mapping excludes unpublished and incomplete products", () => {

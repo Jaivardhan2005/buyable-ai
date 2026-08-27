@@ -122,6 +122,7 @@ model Product {
   pricePaise    BigInt @map("price_paise")
   currency      String @default("INR") @db.Char(3)
   status        ProductStatus @default(DRAFT)
+  category      String? @db.VarChar(100)
   sourceVersion Int @default(1) @map("source_version")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")

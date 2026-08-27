@@ -42,6 +42,7 @@ export function toRankingProduct(product: PublishedProductRecord): DemoProduct |
     description: product.description,
     pricePaise: product.pricePaise,
     availableQty: product.inventory.availableQty,
+    category: product.category || "unspecified",
     attributes: attributes as Record<DemoAttribute, number>,
   };
 }

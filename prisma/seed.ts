@@ -13,7 +13,7 @@ async function main() {
   for (const product of demoCatalog) {
     await prisma.product.upsert({
       where: { merchantId_sku: { merchantId: merchant.id, sku: product.sku } },
-      update: { name: product.name, brand: product.brand, description: product.description, pricePaise: product.pricePaise },
+      update: { name: product.name, brand: product.brand, description: product.description, pricePaise: product.pricePaise, category: product.category },
       create: {
         merchantId: merchant.id,
         sku: product.sku,
@@ -21,6 +21,7 @@ async function main() {
         brand: product.brand,
         description: product.description,
         pricePaise: product.pricePaise,
+        category: product.category,
         status: ProductStatus.PUBLISHED,
       },
     }).then(async (record) => {
