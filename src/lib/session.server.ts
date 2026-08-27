@@ -1,4 +1,4 @@
-import "server-only";
+
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { SessionStatus } from "../../generated/prisma";

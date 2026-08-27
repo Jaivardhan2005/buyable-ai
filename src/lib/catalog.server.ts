@@ -1,4 +1,4 @@
-import "server-only";
+
 
 import { toRankingProducts, type Catalog } from "@/lib/catalog";
 import { prisma } from "@/lib/prisma";
