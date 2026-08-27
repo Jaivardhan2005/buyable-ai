@@ -10,10 +10,12 @@ type RecommendationResult = {
   score: number;
   pricePaise: string | number;
   attributes: Record<string, number>;
+  explanation: string;
 };
 
 type InterpretedPrefs = {
   budgetPaise: string | number | null;
+  category: string | null;
   weights: Record<string, number>;
 };
 
@@ -77,24 +79,7 @@ export default function ShopClient({ initialHasSession, merchantId }: { initialH
   const formatInr = (paise: string | number) => 
     new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(paise) / 100);
 
-  const getTopAttributesText = (attributes: Record<string, number>, weights: Record<string, number>) => {
-    const activeWeights = Object.entries(weights)
-      .filter(([, weight]) => weight > 0)
-      .sort((a, b) => b[1] - a[1]);
-    
-    if (activeWeights.length === 0) return "A balanced all-rounder.";
 
-    // Pick top 2 matched preferences
-    const matches = activeWeights.slice(0, 2).map(([key]) => {
-      const val = attributes[key] || 0;
-      const label = key.replace(/_/g, " ").toLowerCase();
-      if (val > 80) return `excellent ${label}`;
-      if (val > 60) return `good ${label}`;
-      return `decent ${label}`;
-    });
-
-    return `Features ${matches.join(" and ")}.`;
-  };
 
   return (
     <div className="space-y-12">
@@ -146,6 +131,11 @@ export default function ShopClient({ initialHasSession, merchantId }: { initialH
                   Budget: up to {formatInr(data.interpreted.budgetPaise)}
                 </li>
               )}
+              {data.interpreted.category !== null && (
+                <li className="rounded-lg bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 text-sm font-medium text-blue-300 capitalize">
+                  Category: {data.interpreted.category}
+                </li>
+              )}
               {Object.entries(data.interpreted.weights).map(([key, weight]) => {
                 if (weight === 0) return null;
                 const label = key.replace(/_/g, " ");
@@ -159,7 +149,7 @@ export default function ShopClient({ initialHasSession, merchantId }: { initialH
                   </li>
                 );
               })}
-              {Object.keys(data.interpreted.weights).length === 0 && data.interpreted.budgetPaise === null && (
+              {Object.keys(data.interpreted.weights).length === 0 && data.interpreted.budgetPaise === null && data.interpreted.category === null && (
                 <li className="text-sm text-slate-500">No specific preferences identified. Showing overall best options.</li>
               )}
             </ul>
@@ -190,7 +180,7 @@ export default function ShopClient({ initialHasSession, merchantId }: { initialH
                       <div className="rounded-xl bg-slate-900 p-4 border border-slate-800">
                         <p className="text-sm text-slate-300">
                           <span className="text-purple-400 font-semibold block mb-1">Why this?</span>
-                          {getTopAttributesText(result.attributes, data.interpreted.weights)}
+                          {result.explanation}
                         </p>
                       </div>
                     </div>
