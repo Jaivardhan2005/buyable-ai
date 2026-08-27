@@ -15,6 +15,7 @@ export class ExtractionError extends Error {
 
 export type ExtractedPreferences = {
   budgetPaise: bigint | null;
+  category: string | null;
   weights: PreferenceWeights;
 };
 
@@ -56,8 +57,18 @@ export function validateExtraction(text: string): ExtractedPreferences {
     }
   }
 
+  // Validate category
+  let category: string | null = null;
+  if (parsed.category !== undefined && parsed.category !== null) {
+    if (typeof parsed.category !== "string") {
+      throw new ExtractionError("Invalid category: must be a string.");
+    }
+    category = parsed.category.trim() || null;
+  }
+
   return {
     budgetPaise,
+    category,
     weights,
   };
 }
@@ -73,6 +84,11 @@ export async function extractPreferences(requestText: string): Promise<Extracted
       budgetPaise: {
         type: Type.INTEGER,
         description: "The buyer's budget in Indian paise (e.g., ₹18,000 becomes 1800000). Return null if the buyer does not specify any budget constraint.",
+        nullable: true,
+      },
+      category: {
+        type: Type.STRING,
+        description: "The core product category requested (e.g., 'earbuds', 'headphones', 'speakers'). Return null if none is specified.",
         nullable: true,
       },
       weights: {
@@ -95,7 +111,7 @@ export async function extractPreferences(requestText: string): Promise<Extracted
   try {
     response = await ai.models.generateContent({
       model: "gemini-3.6-flash",
-      contents: `Extract the shopping preferences for earbuds from the following request:\n"${requestText}"`,
+      contents: `Extract the shopping preferences from the following request:\n"${requestText}"`,
       config: {
         responseMimeType: "application/json",
         responseSchema: schema,
