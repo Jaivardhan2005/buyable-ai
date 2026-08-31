@@ -1,4 +1,4 @@
-import type { DemoAttribute, DemoProduct } from "@/lib/demo-catalog";
+import { demoCatalog, type DemoAttribute, type DemoProduct } from "@/lib/demo-catalog";
 import { AttributeKey, MerchantStatus, ProductStatus, type Prisma } from "../../generated/prisma";
 
 const publishedProductQuery = {
@@ -35,20 +35,34 @@ export function toRankingProduct(product: PublishedProductRecord): DemoProduct |
   const requiredAttributes = Object.values(AttributeKey) as DemoAttribute[];
   if (!requiredAttributes.every((key) => typeof attributes[key] === "number")) return null;
 
-  return {
+  const catalogItem = demoCatalog.find((d) => d.sku === product.sku);
+
+  const res: DemoProduct = {
     sku: product.sku,
     name: product.name,
     brand: product.brand,
     description: product.description,
     pricePaise: product.pricePaise,
     availableQty: product.inventory.availableQty,
-    category: product.category || "unspecified",
+    category: product.category || catalogItem?.category || "unspecified",
     attributes: attributes as Record<DemoAttribute, number>,
   };
+
+  if (catalogItem?.subcategory) res.subcategory = catalogItem.subcategory;
+  if (catalogItem?.rating !== undefined) res.rating = catalogItem.rating;
+  if (catalogItem?.reviewCount !== undefined) res.reviewCount = catalogItem.reviewCount;
+  if (catalogItem?.useCases) res.useCases = catalogItem.useCases;
+  if (catalogItem?.features) res.features = catalogItem.features;
+  if (catalogItem?.specs) res.specs = catalogItem.specs;
+
+  return res;
 }
 
 export function toRankingProducts(products: PublishedProductRecord[]) {
-  return products.filter((product) => product.status === ProductStatus.PUBLISHED).map(toRankingProduct).filter((product): product is DemoProduct => product !== null);
+  return products
+    .filter((product) => product.status === ProductStatus.PUBLISHED)
+    .map(toRankingProduct)
+    .filter((product): product is DemoProduct => product !== null);
 }
 
 export const publishedCatalogQuery = publishedProductQuery;

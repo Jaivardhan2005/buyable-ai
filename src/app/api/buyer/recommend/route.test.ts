@@ -13,13 +13,19 @@ const fakeCatalog = {
 };
 
 function buildFakeDeps({
-  session = { id: "test-session-123" } as any,
-  prefs = { budgetPaise: null, category: null, weights: { BASS: 100 } } as any,
-  catalog = fakeCatalog as any,
+  session = { id: "test-session-123" } as { id: string } | null,
+  prefs = { budgetPaise: null, category: null, weights: { BASS: 100 } },
+  catalog = fakeCatalog,
   failsExtraction = false,
   extractionError = new Error("Failed to communicate")
+}: {
+  session?: { id: string } | null;
+  prefs?: { budgetPaise: bigint | null; category: string | null; weights: Record<string, number> };
+  catalog?: typeof fakeCatalog;
+  failsExtraction?: boolean;
+  extractionError?: Error;
 } = {}) {
-  let savedRecommendation: any = null;
+  let savedRecommendation: { data: { sessionId: string; requestSnapshot: { text: string }; candidates: unknown[]; rankedResults: unknown[] } } | null = null;
 
   return {
     getSession: async () => session,
@@ -32,9 +38,9 @@ function buildFakeDeps({
       }
       return prefs;
     },
-    getCatalog: async () => catalog,
-    saveRecommendation: async (data: any) => {
-      savedRecommendation = data;
+    getCatalog: async () => catalog as unknown as import("@/lib/catalog").Catalog,
+    saveRecommendation: async (data: import("../../../../../generated/prisma").Prisma.RecommendationCreateArgs) => {
+      savedRecommendation = data as unknown as typeof savedRecommendation;
       return { id: "rec-123" };
     },
     getSavedRecommendation: () => savedRecommendation,

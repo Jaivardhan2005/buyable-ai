@@ -13,7 +13,7 @@ function mockProduct(sku: string, pricePaise: bigint, attributes: Record<string,
     pricePaise,
     availableQty: 10,
     category: "test",
-    attributes: attributes as any,
+    attributes: attributes as Record<import("./demo-catalog").DemoAttribute, number>,
   };
 }
 

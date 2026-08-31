@@ -95,5 +95,5 @@ test("ignores unexpected extra fields", () => {
   const result = validateExtraction(input);
   assert.equal(result.budgetPaise, null);
   assert.equal(result.weights.BASS, 50);
-  assert.equal((result.weights as any).FAKE_FIELD, undefined);
+  assert.equal((result.weights as Record<string, unknown>).FAKE_FIELD, undefined);
 });

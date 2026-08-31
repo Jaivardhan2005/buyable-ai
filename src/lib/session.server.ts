@@ -1,4 +1,3 @@
-
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { SessionStatus } from "../../generated/prisma";
@@ -9,38 +8,78 @@ import {
   SESSION_DURATION_MS,
 } from "./session";
 
+// In-memory fallback session store for resilience when DB connection is unavailable
+const memorySessionStore = new Map<
+  string,
+  {
+    id: string;
+    merchantId: string;
+    tokenHash: string;
+    status: SessionStatus;
+    expiresAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+>();
+
 export async function createBuyerSession(merchantId: string) {
   const { rawToken, tokenHash } = generateSessionToken();
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
 
-  const session = await prisma.customerSession.create({
-    data: {
+  try {
+    const session = await prisma.customerSession.create({
+      data: {
+        merchantId,
+        tokenHash,
+        status: SessionStatus.ACTIVE,
+        expiresAt,
+      },
+    });
+
+    return { session, rawToken };
+  } catch (err) {
+    console.warn("DB session creation failed, using memory session fallback:", err);
+    const fallbackSession = {
+      id: "session-" + Math.random().toString(36).substring(2, 12),
       merchantId,
       tokenHash,
       status: SessionStatus.ACTIVE,
       expiresAt,
-    },
-  });
-
-  return { session, rawToken };
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    memorySessionStore.set(tokenHash, fallbackSession);
+    return { session: fallbackSession, rawToken };
+  }
 }
 
 export async function getBuyerSession(rawToken: string) {
   const tokenHash = hashToken(rawToken);
 
-  const session = await prisma.customerSession.findUnique({
-    where: { tokenHash },
-  });
+  try {
+    const session = await prisma.customerSession.findUnique({
+      where: { tokenHash },
+    });
 
-  if (!session) {
-    return null;
+    if (session) {
+      if (session.status !== SessionStatus.ACTIVE || session.expiresAt.getTime() < Date.now()) {
+        return null;
+      }
+      return session;
+    }
+  } catch (err) {
+    console.warn("DB session lookup failed, checking memory session fallback:", err);
   }
 
-  if (session.status !== SessionStatus.ACTIVE || session.expiresAt.getTime() < Date.now()) {
-    return null;
+  const memSession = memorySessionStore.get(tokenHash);
+  if (memSession) {
+    if (memSession.status !== SessionStatus.ACTIVE || memSession.expiresAt.getTime() < Date.now()) {
+      return null;
+    }
+    return memSession;
   }
 
-  return session;
+  return null;
 }
 
 export async function setBuyerSessionCookie(rawToken: string, expiresAt: Date) {
