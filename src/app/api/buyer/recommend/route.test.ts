@@ -82,7 +82,7 @@ test("handles extraction failure", async () => {
 
 test("handles empty catalog", async () => {
   const req = new Request("http://localhost/api/buyer/recommend", { method: "POST", body: JSON.stringify({ requestText: "hello" }) });
-  const deps = buildFakeDeps({ catalog: { products: [] } });
+  const deps = buildFakeDeps({ catalog: { merchant: { name: "Fake", slug: "fake" }, products: [] } });
   const res = await handleRecommendation(req, deps.getSession, deps.extractPrefs, deps.getCatalog, deps.saveRecommendation);
   assert.equal(res.status, 503);
 });
@@ -100,6 +100,7 @@ test("valid recommendation pipeline, deterministic ranking, payload validation",
   assert.equal(json.results[0].sku, "ITEM-1");
 
   const saved = deps.getSavedRecommendation();
+  assert.ok(saved);
   assert.equal(saved.data.sessionId, "test-session-123");
   assert.equal(saved.data.requestSnapshot.text, "I want strong bass");
   assert.equal(saved.data.candidates.length, 4, "Candidates should capture the full snapshot of eligible products");
@@ -122,7 +123,7 @@ test("no-budget requests return all matching items ordered deterministically", a
 
 test("zero matching products due to budget", async () => {
   const req = new Request("http://localhost/api/buyer/recommend", { method: "POST", body: JSON.stringify({ requestText: "hello" }) });
-  const deps = buildFakeDeps({ prefs: { budgetPaise: 10n, weights: { BASS: 100 } } });
+  const deps = buildFakeDeps({ prefs: { budgetPaise: 10n, category: null, weights: { BASS: 100 } } });
   
   const res = await handleRecommendation(req, deps.getSession, deps.extractPrefs, deps.getCatalog, deps.saveRecommendation);
   assert.equal(res.status, 201);
@@ -130,6 +131,7 @@ test("zero matching products due to budget", async () => {
 
   assert.equal(json.results.length, 0, "No items fit the budget");
   const saved = deps.getSavedRecommendation();
+  assert.ok(saved);
   assert.equal(saved.data.rankedResults.length, 0);
 });
 

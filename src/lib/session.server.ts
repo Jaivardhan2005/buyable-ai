@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDb } from "@/lib/prisma";
 import { SessionStatus } from "../../generated/prisma";
 import {
   generateSessionToken,
@@ -26,50 +26,66 @@ export async function createBuyerSession(merchantId: string) {
   const { rawToken, tokenHash } = generateSessionToken();
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
 
-  try {
-    const session = await prisma.customerSession.create({
-      data: {
-        merchantId,
-        tokenHash,
-        status: SessionStatus.ACTIVE,
-        expiresAt,
-      },
-    });
+  const fallbackSession = {
+    id: "session-" + Math.random().toString(36).substring(2, 12),
+    merchantId,
+    tokenHash,
+    status: SessionStatus.ACTIVE,
+    expiresAt,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 
-    return { session, rawToken };
-  } catch (err) {
-    console.warn("DB session creation failed, using memory session fallback:", err);
-    const fallbackSession = {
-      id: "session-" + Math.random().toString(36).substring(2, 12),
-      merchantId,
-      tokenHash,
-      status: SessionStatus.ACTIVE,
-      expiresAt,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    memorySessionStore.set(tokenHash, fallbackSession);
-    return { session: fallbackSession, rawToken };
-  }
+  const session = await withDb(
+    async () => {
+      return prisma.customerSession.create({
+        data: {
+          merchantId,
+          tokenHash,
+          status: SessionStatus.ACTIVE,
+          expiresAt,
+        },
+      });
+    },
+    () => {
+      memorySessionStore.set(tokenHash, fallbackSession);
+      return fallbackSession;
+    }
+  );
+
+  return { session, rawToken };
 }
 
 export async function getBuyerSession(rawToken: string) {
   const tokenHash = hashToken(rawToken);
 
-  try {
-    const session = await prisma.customerSession.findUnique({
-      where: { tokenHash },
-    });
+  const session = await withDb(
+    async () => {
+      const dbSession = await prisma.customerSession.findUnique({
+        where: { tokenHash },
+      });
 
-    if (session) {
-      if (session.status !== SessionStatus.ACTIVE || session.expiresAt.getTime() < Date.now()) {
-        return null;
+      if (dbSession) {
+        if (dbSession.status !== SessionStatus.ACTIVE || dbSession.expiresAt.getTime() < Date.now()) {
+          return null;
+        }
+        return dbSession;
       }
-      return session;
+      return null;
+    },
+    () => {
+      const memSession = memorySessionStore.get(tokenHash);
+      if (memSession) {
+        if (memSession.status !== SessionStatus.ACTIVE || memSession.expiresAt.getTime() < Date.now()) {
+          return null;
+        }
+        return memSession;
+      }
+      return null;
     }
-  } catch (err) {
-    console.warn("DB session lookup failed, checking memory session fallback:", err);
-  }
+  );
+
+  if (session) return session;
 
   const memSession = memorySessionStore.get(tokenHash);
   if (memSession) {
